@@ -1,0 +1,78 @@
+.header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header h1 {
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .header h1 span {
+    font-weight: 400;
+  }
+  .header h1 span:first-child {
+    font-weight: 600;
+  }
+  .header h1 span:last-child {
+    font-weight: 400;
+  }
+  .header h1 span:first-child::after {
+    content: ' ';
+  }
+  .header-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-item img {
+    width: 16px;
+    height: 16px;
+  }
+  .header-item span {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+  }
+  .header-item span a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .header-item span a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .header-item span a:focus {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .header-item span a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .header-item-right {
+    margin-left: auto;
+  }
+  .header-item-right span {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+  }
+  .header-item-right span a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .header-item-right span a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .header-item-right span a:focus {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .header-item-right span a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  

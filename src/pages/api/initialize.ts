@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { Cache } from '@/cache';
+import { cache } from '@/cache';
 import fs from 'fs';
 import path from 'path';
 import config from '@/serverConfig';
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const gameFile = path.join(gameDir, zipFiles[0]);
         const region = getShortRegion(gameCode);
 
-        await Cache.ref(`games/${gameCode}`).set({
+        await cache.ref(`games/${gameCode}`).set({
             title: gameTitle,
             file: gameFile,
             region,
@@ -34,6 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
     }
     // fs.writeFileSync("cache.json", JSON.stringify(cache, null, 2), "utf8");
-    await Cache.ref("initialized").set(true);
-    res.status(200).json({ message: 'Cache initialized successfully' });
+    await cache.ref("initialized").set(true);
+    res.status(200).json({ message: 'cache initialized successfully' });
 }

@@ -46,3 +46,6 @@ next-env.d.ts
 
 # tmp
 /tmp
+
+# config
+src/serverConfig.js

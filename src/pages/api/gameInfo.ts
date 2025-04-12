@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { readFileSync } from "fs";
-import { Cache } from '@/cache';
+import { cache } from '@/cache';
 
 // const gameInfo = JSON.parse(readFileSync("./dstdb.json", "utf-8"));
 
@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "Invalid game ID" }); // Use res.status and res.json
     }
 
-    const game = (await Cache.ref(`games/${gameCode}`).get()).val();
+    const game = (await cache.ref(`games/${gameCode}`).get()).val();
     if (!game) {
         return res.status(404).json({ error: "Game not found" }); // Use res.status and res.json
     }

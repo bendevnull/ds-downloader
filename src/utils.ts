@@ -1,4 +1,4 @@
-const getGameRegion = (gameCode) => {
+export function getGameRegion(gameCode: string): string {
     // can normally be determined from the last character of the gameCode
     if (!gameCode) return 'Other';
     switch (gameCode.slice(-1)) {
@@ -25,7 +25,7 @@ const getGameRegion = (gameCode) => {
     }
 }
 
-const getShortRegion = (gameCode) => {
+export function getShortRegion(gameCode: string): string {
     const region = getGameRegion(gameCode);
     switch (region) {
         case 'United States':
@@ -43,7 +43,7 @@ const getShortRegion = (gameCode) => {
     }
 }
 
-const getGameTDBRegion = (gameCode) => {
+export const getGameTDBRegion = (gameCode: string): string => {
     const region = getGameRegion(gameCode);
     switch (region) {
         case 'United States':
@@ -60,15 +60,8 @@ const getGameTDBRegion = (gameCode) => {
         default:
             return 'EN';
     }
-}
+};
 
-const calculatePageCount = (totalItems, itemsPerPage) => {
+export function calculatePageCount(totalItems: number, itemsPerPage: number): number {
     return Math.ceil(totalItems / itemsPerPage);
-}
-
-module.exports = {
-    getGameRegion,
-    getGameTDBRegion,
-    getShortRegion,
-    calculatePageCount
 }

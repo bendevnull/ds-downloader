@@ -1,5 +1,5 @@
 module.exports = {
-    dataFolder: '/mnt/storage/ROMs/NDS',
+    dataFolder: '',
     serverPort: 3000,
     devMode: true,
     forceDataCache: false,

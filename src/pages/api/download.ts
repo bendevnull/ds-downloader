@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 // import decompress from 'decompress';
 // import yauzl from 'yauzl';
 import { rmSync, existsSync, mkdirSync, readFileSync, createReadStream } from 'fs';
-import { Cache } from '@/cache';
+import { cache } from '@/cache';
 // import { exec } from 'child_process';
 import path from 'path';
 import unzipper from 'unzipper';
@@ -10,7 +10,7 @@ import unzipper from 'unzipper';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { gameCode } = req.query;
 
-    const game = (await Cache.ref(`games/${gameCode}`).get()).val();
+    const game = (await cache.ref(`games/${gameCode}`).get()).val();
     if (!game) {
         return res.status(404).json({ error: "Game not found" });
     }

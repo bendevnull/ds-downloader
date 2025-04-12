@@ -1,16 +1,21 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { readFileSync } from "fs";
+import { Cache } from '@/cache';
 
-const gameInfo = JSON.parse(readFileSync("./dstdb.json", "utf-8"));
+// const gameInfo = JSON.parse(readFileSync("./dstdb.json", "utf-8"));
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { gameCode } = req.query;
 
     if (!gameCode || typeof gameCode !== "string") {
         return res.status(400).json({ error: "Invalid game ID" }); // Use res.status and res.json
     }
 
-    const title = gameInfo[gameCode];
+    const game = (await Cache.ref(`games/${gameCode}`).get()).val();
+    if (!game) {
+        return res.status(404).json({ error: "Game not found" }); // Use res.status and res.json
+    }
+    const title = game.title;
 
     if (!title) {
         return res.status(404).json({ error: "Game not found" }); // Use res.status and res.json
@@ -19,7 +24,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     const data = {
         gameCode,
         title: title,
-        cover: `https://art.gametdb.com/ds/cover/US/${gameCode}.jpg`,
     };
 
     res.status(200).json(data); // Send a JSON response

@@ -41,7 +41,7 @@ export default function GameCard({ gameCode }: GameCardProps) {
 
     return (
         <div className="card">
-            <figure className="image is-4by3">
+            <figure className="image is-1by1">
                 <img
                     src={`https://art.gametdb.com/ds/coverM/${getGameTDBRegion(gameCode)}/${gameCode}.jpg`}
                     alt="Game cover image"
@@ -51,8 +51,6 @@ export default function GameCard({ gameCode }: GameCardProps) {
                         console.log("Failed to load:", img.src);
                         img.src = "https://demofree.sirv.com/nope-not-here.jpg";
                     }}
-                    width={300}
-                    height={300}
                 />
             </figure>
             <div className="card-content">
@@ -63,8 +61,7 @@ export default function GameCard({ gameCode }: GameCardProps) {
                 </div>
             </div>
             <div className="card-footer">
-                <a href="#" className="card-footer-item">Download</a>
-                <a href="#" className="card-footer-item">More Info</a>
+                <a href={`/api/download?gameCode=${gameCode}`} className="card-footer-item">Download</a>
             </div>
         </div>
     );

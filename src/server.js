@@ -56,8 +56,6 @@ if (!fs.existsSync(config.dataFolder)) {
     process.exit(1);
 }
 
-
-
 app.prepare().then(async () => {
     await cacheData();
     createServer((req, res) => {

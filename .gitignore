@@ -43,3 +43,6 @@ next-env.d.ts
 # cache
 /cache.acebase
 *.db
+
+# tmp
+/tmp

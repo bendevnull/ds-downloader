@@ -1,8 +1,11 @@
 'use client';
-
 import { useState } from 'react';
+import { useStore } from '@/components/StoreProvider';
+import NavbarSettingsDropdown from './NavbarSettingsDropdown';
 
 export default function Navbar() {
+    const store = useStore();
+
     const [navbarOpen, setNavbarOpen] = useState(false);
     const toggleNavbar = () => setNavbarOpen(!navbarOpen);
 
@@ -12,7 +15,7 @@ export default function Navbar() {
             <a className="navbar-item" href="/">
                 DS Downloader
             </a>
-            {/* <a className={`navbar-burger ${navbarOpen ? "is-active" : ""}`} role="button" aria-label="menu" aria-expanded={navbarOpen} onClick={toggleNavbar}>
+            <a className={`navbar-burger ${navbarOpen ? "is-active" : ""}`} role="button" aria-label="menu" aria-expanded={navbarOpen} onClick={toggleNavbar}>
               <span aria-hidden="true"></span>
               <span aria-hidden="true"></span>
               <span aria-hidden="true"></span>
@@ -21,11 +24,8 @@ export default function Navbar() {
           </div>
           <div className={`navbar-menu ${navbarOpen ? "is-active" : ""}`}>
             <div className="navbar-end">
-              <div className="navbar-item">
-                <a className="button" href="/login">Dashboard Login</a>
-              </div>
+              <NavbarSettingsDropdown />
             </div>
-          </div> */}
           </div>
         </nav>
     )

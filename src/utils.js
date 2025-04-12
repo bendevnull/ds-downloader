@@ -5,6 +5,8 @@ const getGameRegion = (gameCode) => {
         case 'E':
             return 'United States';
         case 'P':
+        case 'X':
+        case 'D':
             return 'Europe';
         case 'J':
             return 'Japan';
@@ -60,8 +62,13 @@ const getGameTDBRegion = (gameCode) => {
     }
 }
 
+const calculatePageCount = (totalItems, itemsPerPage) => {
+    return Math.ceil(totalItems / itemsPerPage);
+}
+
 module.exports = {
     getGameRegion,
     getGameTDBRegion,
-    getShortRegion
+    getShortRegion,
+    calculatePageCount
 }

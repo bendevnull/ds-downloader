@@ -17,7 +17,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const data = {
-        gameId: gameCode,
+        gameCode,
         title: title,
         cover: `https://art.gametdb.com/ds/cover/US/${gameCode}.jpg`,
     };

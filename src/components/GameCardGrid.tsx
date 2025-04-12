@@ -1,22 +1,30 @@
 'use client';
 import GameCard from "./GameCard";
 import { FormEvent, useRef, useState, useEffect } from "react";
+import Spinner from "@/components/Spinner";
 
 export default function GameCardGrid() {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [gameList, setGameList] = useState<string[]>([]); // Replace with actual type
     const [page, setPage] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(16);
+    const [totalPageCount, setTotalPageCount] = useState<number>(5);
     const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
+    const [urlParams, setURLParams] = useState<URLSearchParams | null>(null);
     const searchInput = useRef<HTMLInputElement>(null);
 
-    const handlePageChange = (newPage: number) => {
-        if (newPage < 1 || newPage > 5) return; // Prevent going out of bounds
-        setPage(newPage);
-    };
-    
 
-    const handleNextPage = () => {
-        handlePageChange(page + 1);
+    const handleParamsUpdate = () => {
+        if (!urlParams) return;
+        window.location.search = urlParams.toString();
+    }
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage < 1 || newPage > totalPageCount) return; // Prevent going out of bounds
+        setPage(newPage);
+        if (!urlParams) return;
+        urlParams.set("page", newPage.toString());
+        handleParamsUpdate();
     };
 
     const handleSearch = (e: FormEvent) => {
@@ -25,19 +33,19 @@ export default function GameCardGrid() {
             setSearchQuery(searchInput.current.value);
         }
         setIsLoadingPage(true);
+        if (!urlParams) return;
+        urlParams.set("search", searchQuery);
+        handlePageChange(1);
     };
 
     const setCards = (column: number) => {
-        // return values from gameList based on column number (Column 1 returns 0, 3, 6, 9; Column 2 returns 1, 4, 7, 10; etc.)
-        const columnValues = gameList.filter((_, index) => index % 4 === column - 1);
-        // game is not a string, it's an object with gameCode
-        // do this without map
-        const gameCodes = columnValues.reduce((acc: string[], game: any) => {
-            acc.push(game.gameCode);
-            return acc;
-        }, [] as string[]);
-        return gameCodes.map((gameCode) => { 
-            return <GameCard key={gameCode} gameCode={gameCode} />;
+        // Calculate values for this column keeping in mind items should go in order of left to right
+        const totalColumns = 4; // Assuming 4 columns
+        const columnValues = gameList.filter((_, index) => index % totalColumns === column - 1);
+
+        return columnValues.map((game: any) => {
+            console.log("Game:", game)
+            return <GameCard key={game} gameCode={game} />;
         });
     };
 
@@ -47,6 +55,36 @@ export default function GameCardGrid() {
         setGameList(data);
     };
 
+    const Pagination = () => {
+        return (
+            <nav className="pagination is-centered">
+                <a className="pagination-previous" onClick={() => handlePageChange(page - 1)}>Previous</a>
+                <a className="pagination-next" onClick={() => handlePageChange(page + 1)}>Next</a>
+                <ul className="pagination-list">
+                    {page > 2 && (
+                        <>
+                            <li><a className={`pagination-link ${page === 1 ? 'is-current' : ''}`} onClick={() => handlePageChange(1)}>1</a></li>
+                            {page > 3 && <li><span className="pagination-ellipsis">&hellip;</span></li>}
+                        </>
+                    )}
+                    {page > 1 && (
+                        <li><a className="pagination-link" onClick={() => handlePageChange(page - 1)}>{page - 1}</a></li>
+                    )}
+                    <li><a className="pagination-link is-current">{page}</a></li>
+                    {page < totalPageCount && (
+                        <li><a className="pagination-link" onClick={() => handlePageChange(page + 1)}>{page + 1}</a></li>
+                    )}
+                    {page < totalPageCount - 1 && (
+                        <>
+                            {page < totalPageCount - 2 && <li><span className="pagination-ellipsis">&hellip;</span></li>}
+                            <li><a className={`pagination-link ${page === totalPageCount ? 'is-current' : ''}`} onClick={() => handlePageChange(totalPageCount)}>{totalPageCount}</a></li>
+                        </>
+                    )}
+                </ul>
+            </nav>
+        )
+    }
+
     useEffect(() => {
         setIsLoadingPage(true);
         fetchGameList().then(() => {
@@ -54,8 +92,25 @@ export default function GameCardGrid() {
         });
     }, [page, searchQuery]);
 
+    useEffect(() => {
+        const fetchPageCount = async () => {
+            const response = await fetch(`/api/pageCount`);
+            const data = await response.json();
+            setTotalPageCount(data.totalPages);
+        };
+        fetchPageCount();
+    }, [pageSize]);
+
+    useEffect(() => {
+        setURLParams(new URLSearchParams(window.location.search));
+        const pageFromUrl = parseInt(urlParams?.get("page") || "1", 10);
+        if (!isNaN(pageFromUrl) && pageFromUrl >= 1 && pageFromUrl <= totalPageCount) {
+            setPage(pageFromUrl);
+        }
+    }, [totalPageCount]);
+
     if (isLoadingPage) {
-        return <div className="loading">Loading...</div>; // Add a loading indicator
+        <Spinner />
     }
 
     return (
@@ -75,6 +130,7 @@ export default function GameCardGrid() {
                     </form>
                 </div>
             </div>
+            <Pagination />
             {/* <p>Currently searching: {searchQuery ? searchQuery : "None"}</p> */}
             <div className="columns">
                 <div className="column">
@@ -90,17 +146,7 @@ export default function GameCardGrid() {
                     {setCards(4)}
                 </div>
             </div>
-            <nav className="pagination is-centered">
-                <a className="pagination-previous" onClick={() => handlePageChange(page - 1)}>Previous</a>
-                <a className="pagination-next" onClick={() => handlePageChange(page + 1)}>Next</a>
-                <ul className="pagination-list">
-                    <li><a className={`pagination-link ${page === 1 ? 'is-current' : ''}`} onClick={() => handlePageChange(1)}>1</a></li>
-                    <li><a className={`pagination-link ${page === 2 ? 'is-current' : ''}`} onClick={() => handlePageChange(2)}>2</a></li>
-                    <li><a className={`pagination-link ${page === 3 ? 'is-current' : ''}`} onClick={() => handlePageChange(3)}>3</a></li>
-                    <li><a className={`pagination-link ${page === 4 ? 'is-current' : ''}`} onClick={() => handlePageChange(4)}>4</a></li>
-                    <li><a className={`pagination-link ${page === 5 ? 'is-current' : ''}`} onClick={() => handlePageChange(5)}>5</a></li>
-                </ul>
-            </nav>
+            <Pagination />
         </div>
     );
 }

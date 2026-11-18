@@ -4,7 +4,7 @@ import { useStore } from "./StoreProvider";
 
 export default function NavbarSettingsDropdown() {
     const store = useStore();
-    const { columns, setColumns, rows, setRows } = store;
+    const { columns, setColumns, rows, setRows, setReinitializeRequested } = store;
     const columnRef = useRef<HTMLInputElement>(null);
     const rowRef = useRef<HTMLInputElement>(null);
 
@@ -26,8 +26,14 @@ export default function NavbarSettingsDropdown() {
                     <NavbarItem> <input type="text" className="input" ref={columnRef} defaultValue={columns} /> </NavbarItem>
                     <NavbarItem> <span>Maximum Rows:</span> </NavbarItem>
                     <NavbarItem> <input type="text" className="input" ref={rowRef} defaultValue={rows} /> </NavbarItem>
-                    <NavbarItem> <button className="button is-success" onClick={handleApplySettings}>Apply Settings</button> </NavbarItem>
+                    <NavbarItem> <button type="submit" className="button is-success">Apply Settings</button> </NavbarItem>
                 </form>
+                <hr className="navbar-divider" />
+                <NavbarItem>
+                    <button className="button is-warning is-light" onClick={() => setReinitializeRequested(true)}>
+                        Reinitialize Cache
+                    </button>
+                </NavbarItem>
             </div>
         </div>
     )

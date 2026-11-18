@@ -1,9 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-// import decompress from 'decompress';
-// import yauzl from 'yauzl';
-import { rmSync, existsSync, mkdirSync, readFileSync, createReadStream } from 'fs';
+import { createReadStream } from 'fs';
 import { cache } from '@/cache';
-// import { exec } from 'child_process';
 import path from 'path';
 import unzipper from 'unzipper';
 
@@ -16,24 +13,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const zipPath = game.file;
 
-    const tmpDir = path.join(process.cwd(), 'tmp');
-    if (!existsSync(tmpDir)) {
-        mkdirSync(tmpDir);
+    let fileName = path.basename(zipPath);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    if (path.extname(zipPath).toLowerCase() === '.nds') {
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName.replace(/[^\w. -]/g, '_')}"`);
+        return createReadStream(zipPath).pipe(res);
     }
 
-    console.log(zipPath)
-
     const archive = await unzipper.Open.file(zipPath);
-    await archive.extract({ path: tmpDir })
-    const filePath = path.join(tmpDir, zipPath.split('/').pop().replace('.zip', '.nds'));
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${zipPath.split('/').pop().replace('.zip', '.nds')}"`);
-    const fileStream = createReadStream(filePath);
-    res.status(200);
-    fileStream.pipe(res);
-    fileStream.on('close', () => {
-        rmSync(filePath);
-    })
+    const ndsFile = archive.files.find(file => file.type === 'File' && file.path.toLowerCase().endsWith('.nds'));
+    if (!ndsFile) return res.status(404).json({ error: 'No NDS file in archive' });
+    fileName = path.basename(ndsFile.path).replace(/[^\w. -]/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    ndsFile.stream().pipe(res);
 }
 
 export const config = {

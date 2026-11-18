@@ -9,6 +9,8 @@ const StoreContext = createContext<{
     setRows: React.Dispatch<React.SetStateAction<number>>;
     cacheInitialized: boolean;
     setCacheInitialized: React.Dispatch<React.SetStateAction<boolean>>;
+    reinitializeRequested: boolean;
+    setReinitializeRequested: React.Dispatch<React.SetStateAction<boolean>>;
 } | null>(null);
 
 export function useStore() {
@@ -23,6 +25,7 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
     const [columns, setColumns] = useState(5);
     const [rows, setRows] = useState(4);
     const [cacheInitialized, setCacheInitialized] = useState(true);
+    const [reinitializeRequested, setReinitializeRequested] = useState(false);
     
     const [storeLoading, setStoreLoading] = useState(true);
 
@@ -32,7 +35,9 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
         rows,
         setRows,
         cacheInitialized,
-        setCacheInitialized
+        setCacheInitialized,
+        reinitializeRequested,
+        setReinitializeRequested
     };
 
     useEffect(() => {

@@ -1,19 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getAllGames } from '@/cache';
+import { getAllGames, cache } from '@/cache';
 
 // const games = Object.keys(JSON.parse(readFileSync("cache.json", "utf-8"))).map((gameCode) => {
 //     return { gameCode };
 // });
 
-var games: any;
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { page = 1, pageSize = 16, search = "" } = req.query;
     console.log(search)
 
-    if (!games) { games = await getAllGames() }
+    const games = await getAllGames();
 
-    if (!games) {
+    if (!(await cache.ref('initialized').get()).val() || !games || typeof games !== 'object' || Array.isArray(games)) {
         console.log({ games: [], pages: 0, initialized: false })
         res.status(200).json({ games: [], pages: 0, initialized: false });
         return;

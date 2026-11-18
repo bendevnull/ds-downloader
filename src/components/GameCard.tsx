@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from "react";
 import { getGameRegion, getGameTDBRegion } from "../utils";
+import QRModal from "@/components/QRModal";
 import Spinner from "@/components/Spinner";
 
 interface GameCardProps {
@@ -10,6 +11,10 @@ interface GameCardProps {
 export default function GameCard({ gameCode }: GameCardProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<any>(null);
+    const [showQRModal, setShowQRModal] = useState(false);
+    const downloadUrl = typeof window !== 'undefined'
+        ? new URL(`/api/download?gameCode=${encodeURIComponent(gameCode)}`, window.location.origin).toString()
+        : '';
 
     useEffect(() => {
         async function fetchData() {
@@ -61,8 +66,12 @@ export default function GameCard({ gameCode }: GameCardProps) {
                 </div>
             </div>
             <div className="card-footer">
-                <a href={`/api/download?gameCode=${gameCode}`} className="card-footer-item">Download</a>
+                <a href={`/api/download?gameCode=${gameCode}`} className="card-footer-item">Download</a><br/>
+                <button className="card-footer-item" onClick={() => setShowQRModal(true)}>
+                    QR Code
+                </button>
             </div>
+            {showQRModal && <QRModal gameTitle={data.title} downloadUrl={downloadUrl} onClose={() => setShowQRModal(false)} />}
         </div>
     );
 }

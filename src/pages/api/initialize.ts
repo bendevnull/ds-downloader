@@ -4,36 +4,53 @@ import fs from 'fs';
 import path from 'path';
 import config from '@/serverConfig';
 import { getShortRegion } from '@/utils';
+import { organizeRom, scanRoms } from '@/romScanner';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method Not Allowed' });
-        return;
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    // Initialize the cache
-    const gameTitles = JSON.parse(fs.readFileSync("dstdb.json", "utf8"));
-    for (const dir of fs.readdirSync(config.dataFolder)) {
-        if (!fs.statSync(path.join(config.dataFolder, dir)).isDirectory()) continue;
-        const gameCodeFilePath = path.join(config.dataFolder, dir, "game_code.txt");
-        if (!fs.existsSync(gameCodeFilePath)) continue;
-        const gameCode = fs.readFileSync(gameCodeFilePath, "utf8").trim();
-        const gameTitle = Object.keys(gameTitles).includes(gameCode) ? gameTitles[gameCode] : dir;
-        const gameDir = path.join(config.dataFolder, dir);
-        // find zip file in gameDir
-        const zipFiles = fs.readdirSync(gameDir).filter(file => file.endsWith(".zip"));
-        if (zipFiles.length == 0) continue;
-        const gameFile = path.join(gameDir, zipFiles[0]);
-        const region = getShortRegion(gameCode);
+    try {
+        const root = path.resolve(config.dataFolder);
+        const groups = await scanRoms(root);
+        const conflicts = groups.map(({ gameCode, files }) => ({
+            gameCode,
+            files: fs.existsSync(path.join(root, gameCode)) &&
+                !files.some(file => path.dirname(file) === gameCode)
+                ? ['', ...files] : files
+        })).filter(({ files }) => files.length > 1);
 
-        await cache.ref(`games/${gameCode}`).set({
-            title: gameTitle,
-            file: gameFile,
-            region,
-            gameCode
-        })
+        if (req.body?.action !== 'apply') {
+            return res.status(200).json({ conflicts, total: groups.length });
+        }
+
+        const choices = req.body.choices;
+        if (!choices || typeof choices !== 'object' || Array.isArray(choices)) {
+            return res.status(400).json({ error: 'Invalid choices' });
+        }
+        for (const { gameCode, files } of conflicts) {
+            if (typeof choices[gameCode] !== 'string' || !files.includes(choices[gameCode])) {
+                return res.status(409).json({ error: 'Conflicts changed or require a choice. Please scan again.' });
+            }
+        }
+        const gameTitles: Record<string, string> = JSON.parse(fs.readFileSync('dstdb.json', 'utf8'));
+        const games: Record<string, { title: string; file: string; region: string; gameCode: string }> = {};
+        await cache.ref('initialized').set(false);
+        for (const { gameCode, files } of groups) {
+            const selected = conflicts.some(group => group.gameCode === gameCode) ? choices[gameCode] : files[0];
+            if (selected === '') continue;
+            const gameFile = await organizeRom(root, gameCode, selected);
+            games[gameCode] = {
+                title: gameTitles[gameCode] ?? gameCode,
+                file: gameFile,
+                region: getShortRegion(gameCode),
+                gameCode
+            };
+        }
+        await cache.ref('games').set(games);
+        await cache.ref('initialized').set(true);
+        return res.status(200).json({ message: 'cache initialized successfully' });
+    } catch (error) {
+        console.error('Cache initialization failed:', error);
+        return res.status(500).json({ error: 'Cache initialization failed' });
     }
-    // fs.writeFileSync("cache.json", JSON.stringify(cache, null, 2), "utf8");
-    await cache.ref("initialized").set(true);
-    res.status(200).json({ message: 'cache initialized successfully' });
 }

@@ -1,7 +1,6 @@
 'use client';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/components/StoreProvider";
-import Spinner from "@/components/Spinner";
 
 export default function CachePromptModal() {
     const store = useStore();
@@ -10,37 +9,62 @@ export default function CachePromptModal() {
     const [initializing, setInitializing] = useState(false);
     const [finished, setFinished] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { cacheInitialized, setCacheInitialized } = store;
+    const [conflicts, setConflicts] = useState<{ gameCode: string; files: string[] }[]>([]);
+    const [choices, setChoices] = useState<Record<string, string>>({});
+    const [ready, setReady] = useState(false);
+    const { cacheInitialized, setCacheInitialized, reinitializeRequested, setReinitializeRequested } = store;
 
     const handleClose = () => {
+        if (!finished) return;
         setShowModal(false);
         setCacheInitialized(true);
+        setReinitializeRequested(false);
+        setReady(false);
+        setConflicts([]);
+        setChoices({});
+        setError(null);
     };
 
-    const handleInitializeCache = async () => {
+    const requestInitialize = async (body?: object) => {
         setInitializing(true);
-        // make a post request to initialize the cache
+        setError(null);
         try {
             const response = await fetch('/api/initialize', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body ?? {}),
             });
-            if (response.ok) {
+            const data = await response.json();
+            if (!response.ok) {
+                if (response.status === 409) setReady(false);
+                throw new Error(data.error || 'Failed to initialize cache');
+            }
+            if (body) {
                 setFinished(true);
             } else {
-                console.error('Failed to initialize cache');
+                setConflicts(data.conflicts);
+                setChoices(Object.fromEntries(data.conflicts.map((group: { gameCode: string; files: string[] }) => [group.gameCode, group.files.find(file => file !== '') ?? ''])));
+                setReady(true);
             }
-        } catch(error) {
+        } catch (error) {
             setError(error instanceof Error ? error.message : 'Unknown error');
-            console.error('Error initializing cache:', error);
+        } finally {
+            setInitializing(false);
         }
-    }
+    };
 
-    if (!cacheInitialized && !showModal) {
-        setShowModal(true);
-    }
+    useEffect(() => {
+        if (reinitializeRequested || !cacheInitialized) {
+            setShowModal(true);
+            setInitializing(false);
+            setFinished(false);
+            setReady(false);
+            setConflicts([]);
+            setChoices({});
+            setError(null);
+        }
+    }, [reinitializeRequested, cacheInitialized]);
+
 
     const StartInitializeCacheModal = () => {
         return (
@@ -49,10 +73,11 @@ export default function CachePromptModal() {
                     <p className="modal-card-title">Cache Initialization</p>
                 </header>
                 <section className="modal-card-body">
-                    <p>Your cache is not initialized. Please click the button below to initialize it.</p>
+                    <p>Scan ROMs in the data folder, resolve any duplicates, then initialize the cache.</p>
+                    {error && <p className="has-text-danger">{error}</p>}
                 </section>
                 <footer className="modal-card-foot">
-                    <button className="button is-success" onClick={handleInitializeCache}>Initialize Cache</button>
+                    <button className="button is-success" onClick={() => requestInitialize()}>Initialize Cache</button>
                 </footer>
             </div>
         )
@@ -75,6 +100,29 @@ export default function CachePromptModal() {
         )
     }
 
+    const ConflictModal = () => (
+        <div className="modal-card">
+            <header className="modal-card-head"><p className="modal-card-title">Choose ROMs to keep</p></header>
+            <section className="modal-card-body">
+                <p>Only selected ROMs will be added to the cache. Unchosen files remain untouched.</p>
+                {conflicts.map(({ gameCode, files }) => (
+                    <div className="field" key={gameCode}>
+                        <label className="label" htmlFor={`rom-${gameCode}`}>{gameCode}</label>
+                        <div className="select is-fullwidth">
+                            <select id={`rom-${gameCode}`} value={choices[gameCode]} onChange={event => setChoices({ ...choices, [gameCode]: event.target.value })}>
+                                {files.map(file => <option key={file} value={file}>{file || 'Keep existing folder unchanged (exclude new ROM)'}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                ))}
+                {error && <p className="has-text-danger">{error}</p>}
+            </section>
+            <footer className="modal-card-foot">
+                <button className="button is-success" onClick={() => requestInitialize({ action: 'apply', choices })}>Finish Initialization</button>
+            </footer>
+        </div>
+    );
+
     const FinishedModal = () => {
         return (
             <div className="modal-card">
@@ -93,10 +141,11 @@ export default function CachePromptModal() {
     }
 
     return (
-        <div className={`modal ${!cacheInitialized ? "is-active" : ""}`}>
+        <div className={`modal ${showModal && (!cacheInitialized || reinitializeRequested) ? "is-active" : ""}`}>
             <div className="modal-background" onClick={() => { if (finished) handleClose() }}></div>
             <div className="modal-card">
-                { !initializing && !finished ? <StartInitializeCacheModal /> : null }
+                { !initializing && !finished && !ready ? <StartInitializeCacheModal /> : null }
+                { !initializing && !finished && ready ? <ConflictModal /> : null }
                 { initializing && !finished ? <InitializingCacheModal /> : null }
                 { finished ? <FinishedModal /> : null }
             </div>
